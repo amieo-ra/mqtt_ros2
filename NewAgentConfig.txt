@@ -1,0 +1,3 @@
+string agent_id
+diagnostic_msgs/KeyValue[] local_properties
+gofar_navigation/Module[] modules
