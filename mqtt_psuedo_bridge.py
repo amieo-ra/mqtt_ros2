@@ -307,6 +307,7 @@ class MqttPsuedoBridge(Node):
             return
 
         elif self.source == 'robot':
+            print("source is robot")
             # On the robot, everything must be subscribed/published to
             for topic, topic_details in self.topics.items():
                 self.make_topic_connection(topic, topic_details, replace_with="/")
@@ -358,7 +359,9 @@ class MqttPsuedoBridge(Node):
             #qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
             qos = QoSProfile(depth=1, durability=DurabilityPolicy.VOLATILE)
             #self.ros_topics[ros_topic] = rospy.Subscriber(ros_topic, topic_details['type'], self.ros_cb, callback_args=mqtt_topic)
-            self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, self.ros_cb, qos)
+            print("topic info:", topic_details['type'], ros_topic)
+            self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
+            self.ros_topics[ros_topic]
         
 
 if __name__ == '__main__':
