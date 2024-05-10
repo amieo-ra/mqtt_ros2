@@ -12,18 +12,25 @@ from rclpy.qos import QoSProfile, DurabilityPolicy
 #from rospy_message_converter import message_converter
 
 from rclpy_message_converter import message_converter
+#from ros2_message_converter import message_converter
 
 from std_msgs.msg import String, Float32
-import topological_navigation_msgs.msg
+import nav_msgs.msg
+from nav_msgs.msg import Odometry
+#import topological_navigation_msgs.msg
+#import toplogical_nav_msgs.msg
 from geometry_msgs.msg import Pose
-from strands_navigation_msgs.msg import ExecutePolicyModeActionGoal, ExecutePolicyModeActionFeedback, ExecutePolicyModeActionResult
-from topological_navigation_msgs.msg import GotoNodeActionGoal, GotoNodeActionFeedback, GotoNodeActionResult
+
+#from strands_navigation_msgs.msg import ExecutePolicyModeActionGoal, ExecutePolicyModeActionFeedback, ExecutePolicyModeActionResult # not sure if this is still needed..
+#from topological_navigation_msgs.msg import GotoNodeActionGoal, GotoNodeActionFeedback, GotoNodeActionResult
+from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from actionlib_msgs.msg import GoalID, GoalStatusArray
 
-try:
-    from rasberry_coordination.msg import NewAgentConfig
-except:
-    from gofar_navigation.msg import NewAgentConfig
+#try:
+from rasberry_coordination.msg import NewAgentConfig   
+
+#except:
+    #from gofar_navigation.msg import NewAgentConfig #COMMENTED OUT AS NOT SURE OF THE LOCATION OF THIS..
 
 
 class MqttPsuedoBridge(Node):
@@ -62,24 +69,24 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'std_msgs/String',  #There is some bug with this part, data no exist?
                 'type': String
             },
-            'rasberry_coordination/dynamic_fleet/add_agent': {
-                'source':'robot',
-                'namespace_robot': '/',
-                'namespace_mqtt': '',
-                'namespace_server': '/',
-                'type_robot': 'gofar_navigation/NewAgentConfig',
-                'type_server': 'rasberry_coordination/NewAgentConfig',
-                'type': NewAgentConfig
-            },
-            'topological_navigation/execute_policy_mode/goal': {
-                'source':'server',
-                'namespace_robot': '/',
-                'namespace_mqtt': self.robot_name+'<<rn>>/',
-                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionGoal',
-                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionGoal',
-                'type': ExecutePolicyModeActionGoal
-            },
+#            'rasberry_coordination/dynamic_fleet/add_agent': { # commenting out as this hasn't been transferred across to ROS2 hunter yet..
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': '',
+#                'namespace_server': '/',
+#                'type_robot': 'gofar_navigation/NewAgentConfig',
+#                'type_server': 'rasberry_coordination/NewAgentConfig',
+#                'type': NewAgentConfig
+#            },
+#            'topological_navigation/execute_policy_mode/goal': { # commented out for testing
+#                'source':'server',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionGoal',
+#                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionGoal',
+#                'type': ExecutePolicyModeActionGoal
+#            },
             'topological_navigation/execute_policy_mode/cancel': {
                 'source':'server',
                 'namespace_robot': '/',
@@ -89,15 +96,15 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'actionlib_msgs/GoalID',
                 'type': GoalID
             },
-            'topological_navigation/goal': {
-                'source':'server',
-                'namespace_robot': '/',
-                'namespace_mqtt': self.robot_name+'<<rn>>/',
-                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'topological_navigation_msgs/GotoNodeActionGoal',
-                'type_server': 'strands_navigation_msgs/GotoNodeActionGoal',
-                'type': GotoNodeActionGoal
-            },
+#            'topological_navigation/goal': { #commented out just for testing
+#                'source':'server',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/GotoNodeActionGoal',
+#                'type_server': 'strands_navigation_msgs/GotoNodeActionGoal',
+#                'type': GotoNodeActionGoal
+#            },
             'topological_navigation/cancel': {
                 'source':'server',
                 'namespace_robot': '/',
@@ -107,15 +114,15 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'actionlib_msgs/GoalID',
                 'type': GoalID
             },
-            'ui/speaker': {
-                'source':'server',
-                'namespace_robot': '/',
-                'namespace_mqtt': self.robot_name+'<<rn>>/',
-                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'std_msgs/String',
-                'type_server': 'std_msgs/String',
-                'type': String
-            },
+#            'ui/speaker': { # commenting out as this doesn't exist in ROS2 hunter
+#                'source':'server',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'std_msgs/String',
+#                'type_server': 'std_msgs/String',
+#                'type': String
+#            },
             'current_node': {
                 'source':'robot',
                 'namespace_robot': '/',
@@ -188,23 +195,24 @@ class MqttPsuedoBridge(Node):
 #                'type_server': 'actionlib_msgs/GoalStatusArray',
 #                'type': GoalStatusArray
 #            },
-            'han/balance_data': {
-                'source':'robot',
-                'namespace_robot': '/',
-                'namespace_mqtt': self.robot_name+'<<rn>>/',
-                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'std_msgs/Float32',
-                'type_server': 'std_msgs/Float32',
-                'type': Float32
-            },
-            'robot_pose': {
+#            'han/balance_data': { # commented out as this doesn't exist in ROS2 hunter..
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'std_msgs/Float32',
+#                'type_server': 'std_msgs/Float32',
+#                'type': Float32
+#            },
+#            'robot_pose': {
+            'odometry/global': {
                 'source':'robot',
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
                 'namespace_server': '/'+self.robot_name+'<<rn>>/',
                 'type_robot': 'geometry_msgs/Pose',
                 'type_server': 'geometry_msgs/Pose',
-                'type': Pose
+                'type': Odometry
             },
         }
 
@@ -219,10 +227,11 @@ class MqttPsuedoBridge(Node):
 
     def connect_to_mqtt(self):
         # MQTT management functions
-        self.mqtt_client = mqtt.Client(self.source + "_" + self.robot_name)
+        self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, self.source + "_" + self.robot_name)
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
-        self.mqtt_client.connect(self.mqtt_ip, self.mqtt_port)
+        #self.mqtt_client.connect(self.mqtt_ip, self.mqtt_port)
+        self.mqtt_client.connect_async(self.mqtt_ip, self.mqtt_port)
         self.mqtt_client.loop_start()
 
 
@@ -346,7 +355,8 @@ class MqttPsuedoBridge(Node):
         # On the  robot, if the source is the  robot, we sub to ROS and pub through to MQTT
         if topic_details['source'] == self.source:
             print(" ROS -> MQTT | publishing from " + ros_topic + " to " + mqtt_topic)
-            qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+            #qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+            qos = QoSProfile(depth=1, durability=DurabilityPolicy.VOLATILE)
             #self.ros_topics[ros_topic] = rospy.Subscriber(ros_topic, topic_details['type'], self.ros_cb, callback_args=mqtt_topic)
             self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, self.ros_cb, qos)
         

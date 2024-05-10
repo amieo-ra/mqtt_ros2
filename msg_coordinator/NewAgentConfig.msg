@@ -1,3 +1,0 @@
-string agent_id
-rasberry_coordination/KeyValuePair[] local_properties
-rasberry_coordination/NewAgentConfigSetup setup
