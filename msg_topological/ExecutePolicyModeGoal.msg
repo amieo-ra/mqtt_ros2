@@ -1,2 +1,0 @@
-#goal definition
-topological_navigation_msgs/NavRoute route

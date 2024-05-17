@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+#testing out git push 
 import os
 import paho.mqtt.client as mqtt
 import json, msgpack, yaml
@@ -7,11 +8,12 @@ import json, msgpack, yaml
 import rclpy
 
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, DurabilityPolicy
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 
 #from rospy_message_converter import message_converter
 
 from rclpy_message_converter import message_converter
+from tf2_msgs.msg import TFMessage
 #from ros2_message_converter import message_converter
 
 from std_msgs.msg import String, Float32
@@ -54,6 +56,11 @@ class MqttPsuedoBridge(Node):
 
         self.source = 'robot' if self.robot_name else 'server'
         self.local_namespace = 'namespace_'+self.source
+
+        self.qos = QoSProfile(depth=1, 
+                reliability=ReliabilityPolicy.RELIABLE,
+                history=HistoryPolicy.KEEP_LAST,
+                durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
 
 
@@ -103,7 +110,7 @@ class MqttPsuedoBridge(Node):
 #                'namespace_server': '/'+self.robot_name+'<<rn>>/',
 #                'type_robot': 'topological_navigation_msgs/GotoNodeActionGoal',
 #                'type_server': 'strands_navigation_msgs/GotoNodeActionGoal',
-#                'type': GotoNodeActionGoal
+#                'type': GotoNode, #GotoNodeActionGoal
 #            },
             'topological_navigation/cancel': {
                 'source':'server',
@@ -123,7 +130,7 @@ class MqttPsuedoBridge(Node):
 #                'type_server': 'std_msgs/String',
 #                'type': String
 #            },
-            'current_node': {
+            'current_node': { # commented out for testing
                 'source':'robot',
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
@@ -132,15 +139,15 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'std_msgs/String',
                 'type': String
             },
-            'closest_node': {
-                'source':'robot',
-                'namespace_robot': '/',
-                'namespace_mqtt': self.robot_name+'<<rn>>/',
-                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'std_msgs/String',
-                'type_server': 'std_msgs/String',
-                'type': String
-            },
+#            'closest_node': { #commented out for testing
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'std_msgs/String',
+#                'type_server': 'std_msgs/String',
+#                'type': String
+#            },
 #            'topological_navigation/execute_policy_mode/feedback': {
 #                'source':'robot',
 #                'namespace_robot': '/',
@@ -213,6 +220,15 @@ class MqttPsuedoBridge(Node):
                 'type_robot': 'geometry_msgs/Pose',
                 'type_server': 'geometry_msgs/Pose',
                 'type': Odometry
+            },
+            'tf': {
+                'source':'robot',
+                'namespace_robot': '/',
+                'namespace_mqtt': self.robot_name+'<<rn>>/',
+                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+                'type_robot': 'tf',
+                'type_server': 'tf',
+                'type': TFMessage
             },
         }
 
@@ -330,7 +346,9 @@ class MqttPsuedoBridge(Node):
     # Our subscribers to get data from the local ROS and into the MQTT broker
     def ros_cb(self, msg, callback_args):
         print(" MQTT        | publishing on "+callback_args)
+        #self.get_logger().info('I heard: "%s"' & msg.pose)
         data = bytearray(self.dumps(message_converter.convert_ros_message_to_dictionary(msg)))    #TODO: ONLY use bytearray is msgpack is being used....
+        #print("data is:", data)
         self.mqtt_client.publish(callback_args, data)
 
 
@@ -338,7 +356,9 @@ class MqttPsuedoBridge(Node):
     def make_topic_connection(self, topic, topic_details, replace_with, sub_to_mqtt=False):
         # Define relevent topics
         mqtt_topic = topic_details['namespace_mqtt'].replace('<<rn>>/', replace_with) + topic
+        print("mqtt_topic is:", mqtt_topic)
         ros_topic = topic_details[self.local_namespace].replace('<<rn>>/', replace_with) + topic
+        print("ros_topic is:", ros_topic)
 
         # Subscribing to MQTT messages (to publish to MQTT later)
         # On the robot, if the source is the server, we sub to MQTT and pub through to ROS
@@ -346,7 +366,7 @@ class MqttPsuedoBridge(Node):
         if topic_details['source'] != self.source:
             print(" MQTT -> ROS | publishing from " + mqtt_topic + " to " + ros_topic)
             #self.ros_topics[ros_topic] = rospy.Publisher(ros_topic, topic_details['type'], queue_size=10)
-            self.ros_topics[ros_topic] = self.create_publisher(topic_details['type'], ros_topic, 10) ####
+            self.ros_topics[ros_topic] = self.create_publisher(topic_details['type'], ros_topic, self.qos) ####
             if sub_to_mqtt:
                 self.mqtt_topics[mqtt_topic] = topic
                 self.mqtt_client.subscribe(mqtt_topic)
@@ -355,14 +375,18 @@ class MqttPsuedoBridge(Node):
         # On the server, if the source is the server, we sub to ROS and pub through to MQTT
         # On the  robot, if the source is the  robot, we sub to ROS and pub through to MQTT
         if topic_details['source'] == self.source:
+
+            qos = QoSProfile(depth=1, 
+                reliability=ReliabilityPolicy.RELIABLE,
+                history=HistoryPolicy.KEEP_LAST,
+                durability=DurabilityPolicy.VOLATILE)
             print(" ROS -> MQTT | publishing from " + ros_topic + " to " + mqtt_topic)
-            #qos = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-            qos = QoSProfile(depth=1, durability=DurabilityPolicy.VOLATILE)
             #self.ros_topics[ros_topic] = rospy.Subscriber(ros_topic, topic_details['type'], self.ros_cb, callback_args=mqtt_topic)
             print("topic info:", topic_details['type'], ros_topic)
-            self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
-            self.ros_topics[ros_topic]
-        
+            self.callback_args = mqtt_topic
+            #self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
+            self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
+
 
 if __name__ == '__main__':
     rclpy.init(args=None)
