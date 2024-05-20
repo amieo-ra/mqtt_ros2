@@ -24,16 +24,14 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
 
 #from strands_navigation_msgs.msg import ExecutePolicyModeActionGoal, ExecutePolicyModeActionFeedback, ExecutePolicyModeActionResult # not sure if this is still needed..
-#from topological_navigation_msgs.msg import GotoNodeActionGoal, GotoNodeActionFeedback, GotoNodeActionResult
+from topological_navigation_msgs.msg import ExecutePolicyModeGoal
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from actionlib_msgs.msg import GoalID, GoalStatusArray
 
-#try:
-from rasberry_coordination.msg import NewAgentConfig   
+try: from rasberry_coordination.msg import NewAgentConfig
 
-#except:
-    #from gofar_navigation.msg import NewAgentConfig #COMMENTED OUT AS NOT SURE OF THE LOCATION OF THIS..
-
+except:
+    from gofar_navigation_msgs.msg import NewAgentConfig #COMMENTED OUT AS NOT SURE OF THE LOCATION OF THIS..
 
 class MqttPsuedoBridge(Node):
 
@@ -76,24 +74,24 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'std_msgs/String',  #There is some bug with this part, data no exist?
                 'type': String
             },
-#            'rasberry_coordination/dynamic_fleet/add_agent': { # commenting out as this hasn't been transferred across to ROS2 hunter yet..
-#                'source':'robot',
-#                'namespace_robot': '/',
-#                'namespace_mqtt': '',
-#                'namespace_server': '/',
-#                'type_robot': 'gofar_navigation/NewAgentConfig',
-#                'type_server': 'rasberry_coordination/NewAgentConfig',
-#                'type': NewAgentConfig
-#            },
-#            'topological_navigation/execute_policy_mode/goal': { # commented out for testing
-#                'source':'server',
-#                'namespace_robot': '/',
-#                'namespace_mqtt': self.robot_name+'<<rn>>/',
-#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-#                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionGoal',
-#                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionGoal',
-#                'type': ExecutePolicyModeActionGoal
-#            },
+            'rasberry_coordination/dynamic_fleet/add_agent': { # commenting out as this hasn't been transferred across to ROS2 hunter yet..
+                'source':'robot',
+                'namespace_robot': '/',
+                'namespace_mqtt': '',
+                'namespace_server': '/',
+                'type_robot': 'gofar_navigation/NewAgentConfig',
+                'type_server': 'rasberry_coordination/NewAgentConfig',
+                'type': NewAgentConfig
+            },
+            'topological_navigation/execute_policy_mode/goal': { # commented out for testing
+                'source':'server',
+                'namespace_robot': '/',
+                'namespace_mqtt': self.robot_name+'<<rn>>/',
+                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionGoal',
+                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionGoal',
+                'type': ExecutePolicyModeGoal
+            },
             'topological_navigation/execute_policy_mode/cancel': {
                 'source':'server',
                 'namespace_robot': '/',
@@ -103,7 +101,7 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'actionlib_msgs/GoalID',
                 'type': GoalID
             },
-#            'topological_navigation/goal': { #commented out just for testing
+#            'topological_navigation/goal': { #AMMENDED msg type NOT WORKING
 #                'source':'server',
 #                'namespace_robot': '/',
 #                'namespace_mqtt': self.robot_name+'<<rn>>/',
@@ -139,15 +137,15 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'std_msgs/String',
                 'type': String
             },
-#            'closest_node': { #commented out for testing
-#                'source':'robot',
-#                'namespace_robot': '/',
-#                'namespace_mqtt': self.robot_name+'<<rn>>/',
-#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-#                'type_robot': 'std_msgs/String',
-#                'type_server': 'std_msgs/String',
-#                'type': String
-#            },
+            'closest_node': { #commented out for testing
+                'source':'robot',
+                'namespace_robot': '/',
+                'namespace_mqtt': self.robot_name+'<<rn>>/',
+                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+                'type_robot': 'std_msgs/String',
+                'type_server': 'std_msgs/String',
+                'type': String
+            },
 #            'topological_navigation/execute_policy_mode/feedback': {
 #                'source':'robot',
 #                'namespace_robot': '/',

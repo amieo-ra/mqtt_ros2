@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import tf
+#import tf
 import sys
 import os
 import json, yaml
@@ -16,13 +16,14 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Pose
 from diagnostic_msgs.msg import KeyValue
 
-from gofar_navigation.msg import NewAgentConfig, Module
+#from gofar_navigation_msgs.msg import NewAgentConfig, Module
+from rasberry_coordination.msg import NewAgentConfigGF, ModuleGF
 
 class addagent(Node):
 
     def __init__(self):
         super().__init__('AddAgent')
-        self.publisher = self.create_publisher(NewAgentConfig, "/rasberry_coordination/dynamic_fleet/add_agent", 10)
+        self.publisher = self.create_publisher(NewAgentConfigGF, "/rasberry_coordination/dynamic_fleet/add_agent", 10)
         timer_period = 0.25
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -63,7 +64,7 @@ class addagent(Node):
         print("\n")
 
         # Construct object
-        agent = NewAgentConfig()
+        agent = NewAgentConfigGoFar()
         agent.agent_id = agent_data['agent_id']
         agent.local_properties = self.get_kvp_list(agent_data, 'local_properties')
         for m in setup_data['modules']:
