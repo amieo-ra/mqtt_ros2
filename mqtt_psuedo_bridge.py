@@ -31,7 +31,7 @@ from actionlib_msgs.msg import GoalID, GoalStatusArray
 try: from rasberry_coordination.msg import NewAgentConfig
 
 except:
-    from gofar_navigation_msgs.msg import NewAgentConfig #COMMENTED OUT AS NOT SURE OF THE LOCATION OF THIS..
+    from gofar_navigation_msgs.msg import NewAgentConfigGoF as NewAgentConfig #COMMENTED OUT AS NOT SURE OF THE LOCATION OF THIS..
 
 class MqttPsuedoBridge(Node):
 
@@ -346,7 +346,6 @@ class MqttPsuedoBridge(Node):
         print(" MQTT        | publishing on "+callback_args)
         #self.get_logger().info('I heard: "%s"' & msg.pose)
         data = bytearray(self.dumps(message_converter.convert_ros_message_to_dictionary(msg)))    #TODO: ONLY use bytearray is msgpack is being used....
-        #print("data is:", data)
         self.mqtt_client.publish(callback_args, data)
 
 
@@ -379,10 +378,8 @@ class MqttPsuedoBridge(Node):
                 history=HistoryPolicy.KEEP_LAST,
                 durability=DurabilityPolicy.VOLATILE)
             print(" ROS -> MQTT | publishing from " + ros_topic + " to " + mqtt_topic)
-            #self.ros_topics[ros_topic] = rospy.Subscriber(ros_topic, topic_details['type'], self.ros_cb, callback_args=mqtt_topic)
             print("topic info:", topic_details['type'], ros_topic)
             self.callback_args = mqtt_topic
-            #self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
             self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
 
 
