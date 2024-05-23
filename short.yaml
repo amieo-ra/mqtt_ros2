@@ -4,8 +4,8 @@ modules:
     details:
       - structure_type: short
       - rviz:
-            structure: 'short_transportation'
-            colour: 'blue'
+            structure: 'hunter_robot'
+            colour: 'E3DD22'
             tf_source_topic: '~robot_pose'
             tf_source_type: 'geometry_msgs/Pose'
 
@@ -14,7 +14,10 @@ modules:
     interface: Robot
     details:
       - has_presence: true
-      - restrictions: short
+      - restrictions: hunter
+      - occupation:
+            r-c: ['self', 'neighbour_row_tall_ends']
+            dock-: ['self', 'entry']
       - wait_node_name: base_tp_node
 
 #  - name: rasberry_health_monitoring_pkg
