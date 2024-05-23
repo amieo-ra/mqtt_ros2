@@ -28,18 +28,15 @@ from topological_navigation_msgs.msg import ExecutePolicyModeGoal
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from actionlib_msgs.msg import GoalID, GoalStatusArray
 
-try: from rasberry_coordination.msg import NewAgentConfig
-
-except:
-    from gofar_navigation_msgs.msg import NewAgentConfigGoF as NewAgentConfig #COMMENTED OUT AS NOT SURE OF THE LOCATION OF THIS..
+from gofar_navigation_msgs.msg import NewAgentConfigGoF as NewAgentConfig
 
 class MqttPsuedoBridge(Node):
 
     def __init__(self):
         super().__init__('mqtt_psuedo_bridge') #should this be 'mpb'?
         # Define all the details for the MQTT broker
-        self.mqtt_ip = os.getenv('MQTT_BROKER_IP', '10.2.0.1')
-        self.mqtt_port = int(os.getenv('MQTT_BROKER_PORT', 8883))
+        self.mqtt_ip = os.getenv('MQTT_BROKER_IP', 'mqtt.lcas.group')
+        self.mqtt_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
         self.mqtt_encoding = os.getenv('MQTT_ENCODING', 'msgpack')
         mqtt_client = None
 

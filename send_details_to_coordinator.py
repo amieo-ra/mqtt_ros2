@@ -31,7 +31,8 @@ class addagent(Node):
 
         # Collect details
         agent_id = os.getenv('ROBOT_NAME', 'gofar_001')
-        setup = os.getenv('AGENT_SETUP_CONFIG', None)
+        setupfile = '/home/developer/aoc_strawberry_scenario_ws/src/mqtt_ROS2/short.yaml'
+        setup = os.getenv('AGENT_SETUP_CONFIG', setupfile)
 
         print("AddAgent Node launched")
         print("Loading configurations:")
@@ -69,8 +70,18 @@ class addagent(Node):
         for m in setup_data['modules']:
             m['details'] = m['details'] if 'details' in m else [{'key':'value'}]
 
-        agent.modules = [Module(m['name'], m['interface'], [KeyValue(list(d.keys())[0], yaml.dump(list(d.values())[0])) for d in m['details']]) for m in setup_data['modules']]
+
+
+        agent.modules = [Module(name=m['name'],
+                                interface=m['interface'], 
+                                details=[KeyValue(
+                                    key=list(d.keys())[0], 
+                                    value=str(yaml.dump(list(d.values())[0])))
+                        for d in m['details']]) 
+                        for m in setup_data['modules']]
+        
         print("\n\n")
+        
         return agent
 
 
