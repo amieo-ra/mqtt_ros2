@@ -26,6 +26,8 @@ class addagent(Node):
         timer_period = 0.25
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
+        self.declare_parameter("setupfile", "setupfile")
+        self.get_parameter("setupfile")
 
     def timer_callback(self):
 
