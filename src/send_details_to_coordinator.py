@@ -31,7 +31,8 @@ class addagent(Node):
 
         # Collect details
         agent_id = os.getenv('ROBOT_NAME', 'gofar_001')
-        setupfile = '/home/developer/aoc_strawberry_scenario_ws/src/mqtt_ROS2/short.yaml'
+        #setupfile = '/home/developer/aoc_strawberry_scenario_ws/src/mqtt_ROS2/short.yaml'
+        setupfile = setupfile
         setup = os.getenv('AGENT_SETUP_CONFIG', setupfile)
 
         print("AddAgent Node launched")
