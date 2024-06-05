@@ -1,2 +1,2 @@
-# mqtt_ROS2
+# mqtt_ros2
 Converted mqtt scripts for RASberry
