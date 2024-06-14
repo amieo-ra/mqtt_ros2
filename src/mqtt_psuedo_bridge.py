@@ -86,7 +86,7 @@ class MqttPsuedoBridge(Node):
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
                 'namespace_server': '/'+self.robot_name+'<<rn>>/',
                 'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionGoal',
-                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionGoal',
+                'type_server': 'topological_navigation_msgs/ExecutePolicyModeActionGoal', #previously strands_navigation_msgs/ExecutePolicyModeActionGoal
                 'type': ExecutePolicyModeGoal
             },
             'topological_navigation/execute_policy_mode/cancel': {
@@ -98,15 +98,15 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'actionlib_msgs/GoalID',
                 'type': GoalID
             },
-#            'topological_navigation/goal': { #AMMENDED msg type NOT WORKING
-#                'source':'server',
-#                'namespace_robot': '/',
-#                'namespace_mqtt': self.robot_name+'<<rn>>/',
-#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-#                'type_robot': 'topological_navigation_msgs/GotoNodeActionGoal',
-#                'type_server': 'strands_navigation_msgs/GotoNodeActionGoal',
-#                'type': GotoNode, #GotoNodeActionGoal
-#            },
+            'topological_navigation/goal': { #AMMENDED msg type NOT WORKING
+                'source':'server',
+                'namespace_robot': '/',
+                'namespace_mqtt': self.robot_name+'<<rn>>/',
+                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+                'type_robot': 'topological_navigation_msgs/GotoNodeActionGoal',
+                'type_server': 'topological_navigation_msgs/GotoNodeActionGoal', #previously strands_navigation_msgs/GotoNodeActionGoal
+                'type': GotoNode
+            },
             'topological_navigation/cancel': {
                 'source':'server',
                 'namespace_robot': '/',
