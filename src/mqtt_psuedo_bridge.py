@@ -216,15 +216,15 @@ class MqttPsuedoBridge(Node):
                 'type_server': 'geometry_msgs/Pose',
                 'type': Odometry
             },
-            'tf': {
-                'source':'robot',
-                'namespace_robot': '/',
-                'namespace_mqtt': self.robot_name+'<<rn>>/',
-                'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'tf',
-                'type_server': 'tf',
-                'type': TFMessage
-            },
+#            'tf': { #not needed, just for testing
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'tf',
+#                'type_server': 'tf',
+#                'type': TFMessage
+#            },
         }
 
         self.mqtt_topics = dict()
