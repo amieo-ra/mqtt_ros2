@@ -103,8 +103,8 @@ class MqttPsuedoBridge(Node):
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
                 'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'topological_navigation_msgs/GotoNodeActionGoal',
-                'type_server': 'topological_navigation_msgs/GotoNodeActionGoal', #previously strands_navigation_msgs/GotoNodeActionGoal
+                'type_robot': 'topological_navigation_msgs/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal'
+                'type_server': 'topological_navigation_msgs/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal' from strands_navigation_msgs/GotoNodeActionGoal
                 'type': GotoNode
             },
             'topological_navigation/cancel': {
