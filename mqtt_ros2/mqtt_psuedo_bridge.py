@@ -379,12 +379,15 @@ class MqttPsuedoBridge(Node):
             self.callback_args = mqtt_topic
             self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
 
-
-if __name__ == '__main__':
-    rclpy.init(args=None)
+def main(args=None):
+    rclpy.init(args=args)
     mqtt_psuedo_bridge = MqttPsuedoBridge()
     rclpy.spin(mqtt_psuedo_bridge)
-
-
     mqtt_psuedo_bridge.destroy_node()
     rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    
+    main()
+
