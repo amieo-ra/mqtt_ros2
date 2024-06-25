@@ -26,16 +26,16 @@ class addagent(Node):
         timer_period = 0.25
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
-        self.declare_parameter("setupfile").value
-        #self.get_parameter("setupfile")
+        self.declare_parameter("setupfile", rclpy.Parameter.Type.STRING)
+        self.setupfile = self.get_parameter("setupfile").value
 
     def timer_callback(self):
 
         # Collect details
         agent_id = os.getenv('ROBOT_NAME', 'gofar_001')
         #setupfile = '/home/developer/aoc_strawberry_scenario_ws/src/mqtt_ros2/short.yaml'
-        setupfile = setupfile
-        setup = os.getenv('AGENT_SETUP_CONFIG', setupfile)
+       
+        setup = os.getenv('AGENT_SETUP_CONFIG', self.setupfile)
 
         print("AddAgent Node launched")
         print("Loading configurations:")
@@ -87,14 +87,14 @@ class addagent(Node):
         
         return agent
     
-    def main(args=None):
-        rclpy.init(args=args)
-        AddAgent = addagent()
-        rclpy.spin(AddAgent)
+def main(args=None):
+    rclpy.init(args=args)
+    AddAgent = addagent()
+    rclpy.spin(AddAgent)
 
-        AddAgent.destroy_node()
-        rclpy.shutdown()
-        
+    AddAgent.destroy_node()
+    rclpy.shutdown()
+    
 
 
 if __name__ == '__main__':
