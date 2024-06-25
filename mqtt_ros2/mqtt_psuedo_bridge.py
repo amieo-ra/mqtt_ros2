@@ -52,11 +52,14 @@ class MqttPsuedoBridge(Node):
         self.source = 'robot' if self.robot_name else 'server'
         self.local_namespace = 'namespace_'+self.source
 
+        self.action_server_name = '/topological_navigation'
+
         self.qos = QoSProfile(depth=1, 
                 reliability=ReliabilityPolicy.RELIABLE,
                 history=HistoryPolicy.KEEP_LAST,
                 durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
+        self.client = ActionClient(self, GotoNode, self.action_server_name) # callback_group=self.callback_goto_client)
 
 
         # Define topics to connect with (TODO: move this to read from yaml config file)
@@ -104,7 +107,7 @@ class MqttPsuedoBridge(Node):
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
                 'namespace_server': '/'+self.robot_name+'<<rn>>/',
                 'type_robot': 'topological_navigation_msgs/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal'
-                'type_server': 'topological_navigation_msgs/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal' from strands_navigation_msgs/GotoNodeActionGoal
+                'type_server': 'topological_navigation_msgs/action/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal' from strands_navigation_msgs/GotoNodeActionGoal
                 'type': GotoNode
             },
             'topological_navigation/cancel': {
@@ -266,6 +269,7 @@ class MqttPsuedoBridge(Node):
             self.mqtt_topics[mqtt_topic] = topic
             self.mqtt_client.subscribe(mqtt_topic)
             #TODO: we could skip this and only connect on agent load? for the agent-specific topics only?
+    
 
     def on_message(self, client, userdata, msg):
         # Identify topic
@@ -294,18 +298,37 @@ class MqttPsuedoBridge(Node):
 
         rosmsg = topic_info['type_'+self.source]
 
-        if msg.topic != 'topological_map_2':
-            print(" MQTT -> ROS |     payload: "+str(msg))
-            rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
-            #print(rosmsg_data)
-        else:
-            rosmsg_data = str(msg)
+        #####added#####
 
-        # Publish msg to relevant ROS topic
-        #print(self.ros_topics)
-        rostopic =  topic_info['namespace_server'].replace('<<rn>>', sender) + topic
-        #print(rostopic)
-        self.ros_topics[rostopic].publish(rosmsg_data)
+        if msg.topic == 'topological_navigation/goal':
+            print("set up the action here..!)
+            navgoal = GotoNode.Goal()
+            navgoal.target = feedback.marker_name
+            navgoal.no_orientation = True 
+            self.goal = navgoal
+            send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
+
+        else:  ####indented
+        
+            if msg.topic != 'topological_map_2':
+                print(" MQTT -> ROS |     payload: "+str(msg))
+                rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
+                
+                #print(rosmsg_data)
+            else:
+                rosmsg_data = str(msg)
+    
+            # Publish msg to relevant ROS topic
+            #print(self.ros_topics)
+            rostopic =  topic_info['namespace_server'].replace('<<rn>>', sender) + topic
+            #print(rostopic)
+            self.ros_topics[rostopic].publish(rosmsg_data)
+        
+
+    def feedback_callback(self, feedback_msg):
+        self.nav_client_feedback = feedback_msg.feedback
+        self.get_logger().info("feedback: {} ".format(self.nav_client_feedback))
+        return 
 
 
     def connect_to_ros(self):
@@ -378,6 +401,51 @@ class MqttPsuedoBridge(Node):
             print("topic info:", topic_details['type'], ros_topic)
             self.callback_args = mqtt_topic
             self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
+
+    def execute(self):     
+        if not self.client.server_is_ready():
+            self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
+            self.client.wait_for_server(timeout_sec=2)
+        
+        if not self.client.server_is_ready():
+            self.get_logger().info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
+            return 
+        
+        self.get_logger().info("Executing the action...")
+        send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
+        while rclpy.ok():
+            try:
+                rclpy.spin_once(self, executor=self.executor_goto_client)
+                # rclpy.spin_until_future_complete(self, send_goal_future, executor=self.executor_goto_client, timeout_sec=2.0)
+                if send_goal_future.done():
+                    self.goal_handle = send_goal_future.result()
+                    break
+            except Exception as e:
+                self.get_logger().error("Error while sending the goal to GOTO node {} ".format(e))
+                return False  
+
+        if not self.goal_handle.accepted:
+            self.get_logger().error('GOTO action is rejected')
+            return False
+
+        self.get_logger().info('The goal accepted')
+        self.goal_get_result_future = self.goal_handle.get_result_async()
+        self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
+        while rclpy.ok():
+            try:
+                rclpy.spin_once(self, timeout_sec=0.2)
+                if(self.early_terminate_is_required):
+                   self.get_logger().warning("Not going to wait till finishing ongoing task, early termination is required ") 
+                   return False 
+                if self.goal_get_result_future.done():
+                    status = self.goal_get_result_future.result().status
+                    self.action_status = status
+                    self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+                    return True 
+            except Exception as e:
+                self.get_logger().error("Error while executing go to node policy {} ".format(e))
+                # self.goal_get_result_future = None
+                return False  
 
 def main(args=None):
     rclpy.init(args=args)
