@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import paho.mqtt.client as mqtt
 import json, msgpack, yaml
 
@@ -27,6 +28,7 @@ from actionlib_msgs.msg import GoalID, GoalStatusArray
 
 from gofar_navigation_msgs.msg import NewAgentConfigGoF as NewAgentConfig
 
+
 class MqttPseudoBridge(Node):
 
   def __init__(self):
@@ -35,7 +37,6 @@ class MqttPseudoBridge(Node):
     self.mqtt_ip = os.getenv('MQTT_BROKER_IP', 'mqtt.lcas.group')
     self.mqtt_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
     self.mqtt_encoding = os.getenv('MQTT_ENCODING', 'msgpack')
-    mqtt_client = None
 
     # Specify the loading and dumping functions
     self.dumps = msgpack.dumps if self.mqtt_encoding == 'msgpack' else json.dumps
@@ -58,8 +59,7 @@ class MqttPseudoBridge(Node):
 
     self.client = ActionClient(self, GotoNode, self.action_server_name) # callback_group=self.callback_goto_client)
 
-
-    # Define topics to connect with (TODO: move this to read from yaml config file)
+    # Define topics to connect with
     self.load_topics()
 
     self.mqtt_topics = dict()
@@ -77,27 +77,51 @@ class MqttPseudoBridge(Node):
 
   def connect_to_mqtt(self):
     # MQTT management functions
-    self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, self.source + "_" + self.robot_name)
+    self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1,
+                                   self.source + "_" + self.robot_name)
     self.mqtt_client.on_connect = self.on_connect
     self.mqtt_client.on_message = self.on_message
-    #self.mqtt_client.connect(self.mqtt_ip, self.mqtt_port)
     self.mqtt_client.connect_async(self.mqtt_ip, self.mqtt_port)
     self.mqtt_client.loop_start()
 
+  def connect_to_ros(self):
+    # Define publishers and subscribers to ROS
+    if self.source == 'server':
+      # On the server, everything not agent-specific is already being published/subscribed
+      # so we only need to subscribe to the agent namespace topics, but need the name to do so
+      #self.agent_sub = rospy.Subscriber('/rasberry_coordination/dynamic_fleet/add_agent', NewAgentConfig, self.agent_cb)
+      
+      qos = QoSProfile(depth=1, 
+                       reliability=ReliabilityPolicy.RELIABLE,
+                       history=HistoryPolicy.KEEP_LAST,
+                       durability=DurabilityPolicy.TRANSIENT_LOCAL)
+      self.agent_sub = self.create_subscription(NewAgentConfig, '/rasberry_coordination/dynamic_fleet/add_agent', self.agent_cb, qos)
+      return
+
+    elif self.source == 'robot':
+      print("source is robot")
+      # On the robot, everything must be subscribed/published to
+      for topic, topic_details in self.topics.items():
+        self.make_topic_connection(topic, topic_details, replace_with="/")
 
   def on_connect(self, client, userdata, flags, rc):
     # When MQTT connects, subscribe to all relevant MQTT topics
     print(" MQTT ->     | Connected")
     for topic, topic_details in self.topics.items():
+      print(topic)
 
       # We dont want to subscribe to the add_agent topic, this is handled elsewhere
       if topic == 'rasberry_coordination/dynamic_fleet/add_agent': continue
+      print("Ite")
 
       # We dont want to subscribe if the message it local
+      print(topic_details['source'])
       if topic_details['source'] == self.source: continue
+      print("Itera")
 
       # Skip if topic uses agent namespacing
       if topic_details['namespace_server'] == '/<<rn>>/': continue
+      print("Iterate")
 
       #Subscribe mqtt stream to this topic
       mqtt_topic = topic_details['namespace_mqtt'].replace('<<rn>>/', '/') + topic
@@ -105,7 +129,6 @@ class MqttPseudoBridge(Node):
       self.mqtt_topics[mqtt_topic] = topic
       self.mqtt_client.subscribe(mqtt_topic)
       #TODO: we could skip this and only connect on agent load? for the agent-specific topics only?
-  
 
   def on_message(self, client, userdata, msg):
     # Identify topic
@@ -166,22 +189,6 @@ class MqttPseudoBridge(Node):
     self.get_logger().info("feedback: {} ".format(self.nav_client_feedback))
     return 
 
-
-  def connect_to_ros(self):
-    # Define publishers and subscribers to ROS
-    if self.source == 'server':
-      # On the server, everything not agent-specific is already being published/subscribed
-      # so we only need to subscribe to the agent namespace topics, but need the name to do so
-      #self.agent_sub = rospy.Subscriber('/rasberry_coordination/dynamic_fleet/add_agent', NewAgentConfig, self.agent_cb)
-      self.agent_sub = self.create_subscription(NewAgentConfig, '/rasberry_coordination/dynamic_fleet/add_agent', self.agent_cb)
-      return
-
-    elif self.source == 'robot':
-      print("source is robot")
-      # On the robot, everything must be subscribed/published to
-      for topic, topic_details in self.topics.items():
-        self.make_topic_connection(topic, topic_details, replace_with="/")
-
   def agent_cb(self, msg):
     # Skip if agent exists
     if msg.agent_id in self.agents: return
@@ -204,8 +211,6 @@ class MqttPseudoBridge(Node):
     data = bytearray(self.dumps(message_converter.convert_ros_message_to_dictionary(msg)))    #TODO: ONLY use bytearray is msgpack is being used....
     self.mqtt_client.publish(callback_args, data)
 
-
-
   def make_topic_connection(self, topic, topic_details, replace_with, sub_to_mqtt=False):
     # Define relevent topics
     mqtt_topic = topic_details['namespace_mqtt'].replace('<<rn>>/', replace_with) + topic
@@ -218,8 +223,8 @@ class MqttPseudoBridge(Node):
     # On the server, if the source is the robot, we sub to MQTT and pub through to ROS
     if topic_details['source'] != self.source:
       print(" MQTT -> ROS | publishing from " + mqtt_topic + " to " + ros_topic)
-      #self.ros_topics[ros_topic] = rospy.Publisher(ros_topic, topic_details['type'], queue_size=10)
-      self.ros_topics[ros_topic] = self.create_publisher(topic_details['type'], ros_topic, self.qos) ####
+      print(topic_details['type'])
+      self.ros_topics[ros_topic] = self.create_publisher(getattr(sys.modules[__name__], topic_details['type']), ros_topic, 10) ####
       if sub_to_mqtt:
         self.mqtt_topics[mqtt_topic] = topic
         self.mqtt_client.subscribe(mqtt_topic)
@@ -236,7 +241,7 @@ class MqttPseudoBridge(Node):
       print(" ROS -> MQTT | publishing from " + ros_topic + " to " + mqtt_topic)
       print("topic info:", topic_details['type'], ros_topic)
       self.callback_args = mqtt_topic
-      self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
+      self.ros_topics[ros_topic] = self.create_subscription(getattr(sys.modules[__name__], topic_details['type']), ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
 
   def execute(self):     
     if not self.client.server_is_ready():
