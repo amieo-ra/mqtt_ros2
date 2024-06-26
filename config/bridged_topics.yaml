@@ -1,0 +1,73 @@
+---
+topological_map_2:
+  source: server
+  namespace_robot: /
+  namespace_mqtt: ""
+  namespace_server: /
+  type_robot: std_msgs/String
+  type_server: std_msgs/String
+  type: String
+rasberry_coordination/dynamic_fleet/add_agent:
+  source: robot
+  namespace_robot: /
+  namespace_mqtt: ""
+  namespace_server: /
+  type_robot: gofar_navigation/NewAgentConfig
+  type_server: rasberry_coordination/NewAgentConfig
+  type: NewAgentConfig
+topological_navigation/execute_policy_mode/goal:
+  source: server
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: topological_navigation_msgs/ExecutePolicyModeActionGoal
+  type_server: topological_navigation_msgs/ExecutePolicyModeActionGoal
+  type: ExecutePolicyModeGoal
+topological_navigation/execute_policy_mode/cancel:
+  source: server
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: actionlib_msgs/GoalID
+  type_server: actionlib_msgs/GoalID
+  type: GoalID
+topological_navigation/goal:
+  source: server
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: topological_navigation_msgs/GotoNode
+  type_server: topological_navigation_msgs/action/GotoNode
+  type: GotoNode
+topological_navigation/cancel:
+  source: server
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: actionlib_msgs/GoalID
+  type_server: actionlib_msgs/GoalID
+  type: GoalID
+current_node:
+  source: robot
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: std_msgs/String
+  type_server: std_msgs/String
+  type: String
+closest_node:
+  source: robot
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: std_msgs/String
+  type_server: std_msgs/String
+  type: String
+odometry/global:
+  source: robot
+  namespace_robot: /
+  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+  namespace_server: /${ROBOT_NAME}<<rn>>/
+  type_robot: geometry_msgs/Pose
+  type_server: geometry_msgs/Pose
+  type: Odometry
