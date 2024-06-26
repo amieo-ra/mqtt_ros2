@@ -17,12 +17,12 @@ setup(
     zip_safe=True,
     maintainer='Amie Owen',
     maintainer_email='amieo@live.co.uk',
-    description='The ros2 version of the mqtt_psuedo_bridge to run with the Coordinator',
+    description='The ros2 version of the mqtt_pseudo_bridge to run with the Coordinator',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'mqtt_psuedo_bridge.py = mqtt_ros2.mqtt_psuedo_bridge:main',
+            'mqtt_pseudo_bridge.py = mqtt_ros2.mqtt_pseudo_bridge:main',
             'send_details_to_coordinator.py = mqtt_ros2.send_details_to_coordinator:main'
         ],
     },
