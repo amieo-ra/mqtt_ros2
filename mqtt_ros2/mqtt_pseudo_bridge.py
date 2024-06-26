@@ -71,7 +71,7 @@ class MqttPseudoBridge(Node):
     self.connect_to_ros()
 
   def load_topics(self):
-    filename = os.path.dirname(os.path.realpath(__file__)) + "../config/bridged_topics.yaml"
+    filename = os.path.dirname(os.path.realpath(__file__)) + "/../config/bridged_topics.yaml"
     topics = open(filename).read().replace("${ROBOT_NAME}", self.robot_name)
     self.topics = yaml.safe_load(topics)
 
