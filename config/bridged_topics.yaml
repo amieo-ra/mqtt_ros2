@@ -31,14 +31,14 @@ topological_navigation/execute_policy_mode/cancel:
   type_robot: actionlib_msgs/GoalID
   type_server: actionlib_msgs/GoalID
   type: GoalID
-topological_navigation/goal:
-  source: server
-  namespace_robot: /
-  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
-  namespace_server: /${ROBOT_NAME}<<rn>>/
-  type_robot: topological_navigation_msgs/GotoNode
-  type_server: topological_navigation_msgs/action/GotoNode
-  type: GotoNode
+#topological_navigation/goal:
+#  source: server
+#  namespace_robot: /
+#  namespace_mqtt: ${ROBOT_NAME}<<rn>>/
+#  namespace_server: /${ROBOT_NAME}<<rn>>/
+#  type_robot: topological_navigation_msgs/GotoNode
+#  type_server: topological_navigation_msgs/action/GotoNode
+#  type: GotoNode
 topological_navigation/cancel:
   source: server
   namespace_robot: /

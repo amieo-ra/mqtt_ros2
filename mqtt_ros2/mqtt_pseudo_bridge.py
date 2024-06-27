@@ -33,6 +33,7 @@ class MqttPseudoBridge(Node):
 
   def __init__(self):
     super().__init__('mqtt_pseudo_bridge') #should this be 'mpb'?
+    self.logger = self.get_logger()
     # Define all the details for the MQTT broker
     self.mqtt_ip = os.getenv('MQTT_BROKER_IP', 'mqtt.lcas.group')
     self.mqtt_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
@@ -52,10 +53,10 @@ class MqttPseudoBridge(Node):
 
     self.action_server_name = '/topological_navigation'
 
-    self.qos = QoSProfile(depth=1, 
-                          reliability=ReliabilityPolicy.RELIABLE,
-                          history=HistoryPolicy.KEEP_LAST,
-                          durability=DurabilityPolicy.TRANSIENT_LOCAL)
+    # self.qos = QoSProfile(depth=1, 
+    #                       reliability=ReliabilityPolicy.RELIABLE,
+    #                       history=HistoryPolicy.KEEP_LAST,
+    #                       durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
     self.client = ActionClient(self, GotoNode, self.action_server_name) # callback_group=self.callback_goto_client)
 
@@ -108,22 +109,16 @@ class MqttPseudoBridge(Node):
     # When MQTT connects, subscribe to all relevant MQTT topics
     print(" MQTT ->     | Connected")
     for topic, topic_details in self.topics.items():
-      print(topic)
-
-      # We dont want to subscribe to the add_agent topic, this is handled elsewhere
+      # Do not subscribe to add_agent topic, this is handled elsewhere
       if topic == 'rasberry_coordination/dynamic_fleet/add_agent': continue
-      print("Ite")
 
-      # We dont want to subscribe if the message it local
-      print(topic_details['source'])
+      # Do not subscribe to self
       if topic_details['source'] == self.source: continue
-      print("Itera")
 
-      # Skip if topic uses agent namespacing
+      # Do not subscribe if topic uses agent namespacing
       if topic_details['namespace_server'] == '/<<rn>>/': continue
-      print("Iterate")
 
-      #Subscribe mqtt stream to this topic
+      # Subscribe mqtt stream to this topic
       mqtt_topic = topic_details['namespace_mqtt'].replace('<<rn>>/', '/') + topic
       print(" MQTT ->     | subscribing to " + mqtt_topic)
       self.mqtt_topics[mqtt_topic] = topic
@@ -153,7 +148,7 @@ class MqttPseudoBridge(Node):
     msg_type = topic_info['type']
 
     #Convert bytearray to msg
-    msg = self.loads(msg.payload)
+    data = self.loads(msg.payload)
 
     rosmsg = topic_info['type_'+self.source]
 
@@ -162,7 +157,7 @@ class MqttPseudoBridge(Node):
     if msg.topic == 'topological_navigation/goal':
       print("set up the action here..!")
       navgoal = GotoNode.Goal()
-      navgoal.target = feedback.marker_name
+      navgoal.target = self.nav_client_feedback.marker_name
       navgoal.no_orientation = True 
       self.goal = navgoal
       send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
@@ -170,23 +165,23 @@ class MqttPseudoBridge(Node):
     else:  ####indented
     
       if msg.topic != 'topological_map_2':
-        print(" MQTT -> ROS |     payload: "+str(msg))
-        rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
+        print(" MQTT -> ROS |     payload: "+str(data))
+        rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, data)
         
         #print(rosmsg_data)
       else:
-        rosmsg_data = str(msg)
+        rosmsg_data = String(data=str(data))
   
       # Publish msg to relevant ROS topic
-      #print(self.ros_topics)
-      rostopic =  topic_info['namespace_server'].replace('<<rn>>', sender) + topic
-      #print(rostopic)
+      rostopic = topic_info['namespace_server'].replace('<<rn>>', sender) + topic
+      print(rostopic)
+      print(self.ros_topics)
+      print(self.ros_topics[rostopic])
       self.ros_topics[rostopic].publish(rosmsg_data)
-    
 
   def feedback_callback(self, feedback_msg):
     self.nav_client_feedback = feedback_msg.feedback
-    self.get_logger().info("feedback: {} ".format(self.nav_client_feedback))
+    self.logger.info("feedback: {} ".format(self.nav_client_feedback))
     return 
 
   def agent_cb(self, msg):
@@ -207,7 +202,7 @@ class MqttPseudoBridge(Node):
   # Our subscribers to get data from the local ROS and into the MQTT broker
   def ros_cb(self, msg, callback_args):
     print(" MQTT        | publishing on "+callback_args)
-    #self.get_logger().info('I heard: "%s"' & msg.pose)
+    #self.logger.info('I heard: "%s"' & msg.pose)
     data = bytearray(self.dumps(message_converter.convert_ros_message_to_dictionary(msg)))    #TODO: ONLY use bytearray is msgpack is being used....
     self.mqtt_client.publish(callback_args, data)
 
@@ -245,14 +240,14 @@ class MqttPseudoBridge(Node):
 
   def execute(self):     
     if not self.client.server_is_ready():
-      self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
+      self.logger.info("Waiting for the action server {}...".format(self.action_server_name))
       self.client.wait_for_server(timeout_sec=2)
     
     if not self.client.server_is_ready():
-      self.get_logger().info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
+      self.logger.info("action server  {} not responding ... can not perform any action".format(self.action_server_name))
       return 
     
-    self.get_logger().info("Executing the action...")
+    self.logger.info("Executing the action...")
     send_goal_future = self.client.send_goal_async(self.goal,  feedback_callback=self.feedback_callback)
     while rclpy.ok():
       try:
@@ -262,29 +257,29 @@ class MqttPseudoBridge(Node):
           self.goal_handle = send_goal_future.result()
           break
       except Exception as e:
-        self.get_logger().error("Error while sending the goal to GOTO node {} ".format(e))
+        self.logger.error("Error while sending the goal to GOTO node {} ".format(e))
         return False  
 
     if not self.goal_handle.accepted:
-      self.get_logger().error('GOTO action is rejected')
+      self.logger.error('GOTO action is rejected')
       return False
 
-    self.get_logger().info('The goal accepted')
+    self.logger.info('The goal accepted')
     self.goal_get_result_future = self.goal_handle.get_result_async()
-    self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
+    self.logger.info("Waiting for {} action to complete".format(self.action_server_name))
     while rclpy.ok():
       try:
         rclpy.spin_once(self, timeout_sec=0.2)
         if(self.early_terminate_is_required):
-          self.get_logger().warning("Not going to wait till finishing ongoing task, early termination is required ") 
+          self.logger.warning("Not going to wait till finishing ongoing task, early termination is required ") 
           return False 
         if self.goal_get_result_future.done():
           status = self.goal_get_result_future.result().status
           self.action_status = status
-          self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+          self.logger.info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
           return True 
       except Exception as e:
-        self.get_logger().error("Error while executing go to node policy {} ".format(e))
+        self.logger.error("Error while executing go to node policy {} ".format(e))
         # self.goal_get_result_future = None
         return False  
 

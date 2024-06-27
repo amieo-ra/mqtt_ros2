@@ -21,6 +21,9 @@
   <exec_depend>rosidl_default_runtime</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>rospy_message_converter</exec_depend>
+  <exec_depend>gofar_navigation_msgs</exec_depend>
+
 
   <test_depend>ament_lint_common</test_depend>
 
