@@ -32,10 +32,10 @@ from actionlib_msgs.msg import GoalID, GoalStatusArray
 
 from gofar_navigation_msgs.msg import NewAgentConfigGoF as NewAgentConfig
 
-class MqttPsuedoBridge(Node):
+class MqttPseudoBridge(Node):
 
     def __init__(self):
-        super().__init__('mqtt_psuedo_bridge') #should this be 'mpb'?
+        super().__init__('mqtt_pseudo_bridge') #should this be 'mpb'?
         # Define all the details for the MQTT broker
         self.mqtt_ip = os.getenv('MQTT_BROKER_IP', 'mqtt.lcas.group')
         self.mqtt_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
@@ -224,9 +224,9 @@ class MqttPsuedoBridge(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    mqtt_psuedo_bridge = MqttPsuedoBridge()
-    rclpy.spin(mqtt_psuedo_bridge)
-    mqtt_psuedo_bridge.destroy_node()
+    mqtt_pseudo_bridge = MqttPseudoBridge()
+    rclpy.spin(mqtt_pseudo_bridge)
+    mqtt_pseudo_bridge.destroy_node()
     rclpy.shutdown()
 
 
