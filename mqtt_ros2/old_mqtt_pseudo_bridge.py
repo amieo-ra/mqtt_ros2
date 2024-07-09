@@ -10,19 +10,14 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
 
-#from rospy_message_converter import message_converter
-
 from rclpy_message_converter import message_converter
 from tf2_msgs.msg import TFMessage
-#from ros2_message_converter import message_converter
 
 import std_msgs.msg
 
 from std_msgs.msg import String, Float32
 import nav_msgs.msg
 from nav_msgs.msg import Odometry
-#import topological_navigation_msgs.msg
-#import toplogical_nav_msgs.msg
 from geometry_msgs.msg import Pose
 
 #from strands_navigation_msgs.msg import ExecutePolicyModeActionGoal, ExecutePolicyModeActionFeedback, ExecutePolicyModeActionResult # not sure if this is still needed..
@@ -32,10 +27,10 @@ from actionlib_msgs.msg import GoalID, GoalStatusArray
 
 from gofar_navigation_msgs.msg import NewAgentConfigGoF as NewAgentConfig
 
-class MqttPseudoBridge(Node):
+class MqttPsuedoBridge(Node):
 
     def __init__(self):
-        super().__init__('mqtt_pseudo_bridge') #should this be 'mpb'?
+        super().__init__('mqtt_psuedo_bridge') #should this be 'mpb'?
         # Define all the details for the MQTT broker
         self.mqtt_ip = os.getenv('MQTT_BROKER_IP', 'mqtt.lcas.group')
         self.mqtt_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
@@ -59,8 +54,10 @@ class MqttPseudoBridge(Node):
                 reliability=ReliabilityPolicy.RELIABLE,
                 history=HistoryPolicy.KEEP_LAST,
                 durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        
-                # Define topics to connect with (TODO: move this to read from yaml config file)
+
+
+
+        # Define topics to connect with (TODO: move this to read from yaml config file)
         self.topics = {
             # 'topological_map_2': {
             #     'source':'server',
@@ -72,7 +69,7 @@ class MqttPseudoBridge(Node):
             #     'type_server': 'std_msgs/String',  
             #     'type': std_msgs.msg.String
             # },
-            'rasberry_coordination/dynamic_fleet/add_agent': { 
+            'rasberry_coordination/dynamic_fleet/add_agent': { # commenting out as this hasn't been transferred across to ROS2 hunter yet..
                 'source':'robot',
                 'namespace_robot': '/',
                 'namespace_mqtt': '',
@@ -81,7 +78,7 @@ class MqttPseudoBridge(Node):
                 'type_server': 'rasberry_coordination/NewAgentConfig',
                 'type': NewAgentConfig
             },
-            'topological_navigation/execute_policy_mode/goal': { 
+            'topological_navigation/execute_policy_mode/goal': { # commented out for testing
                 'source':'server',
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
@@ -99,7 +96,15 @@ class MqttPseudoBridge(Node):
                 'type_server': 'actionlib_msgs/GoalID',
                 'type': GoalID
             },
-
+#            'topological_navigation/goal': { #AMMENDED msg type NOT WORKING
+#                'source':'server',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal'
+#                'type_server': 'topological_navigation_msgs/GotoNode', #previously 'topological_navigation_msgs/GotoNodeActionGoal' from strands_navigation_msgs/GotoNodeActionGoal
+#                'type': GotoNode
+#            },
             'topological_navigation/cancel': {
                 'source':'server',
                 'namespace_robot': '/',
@@ -109,8 +114,16 @@ class MqttPseudoBridge(Node):
                 'type_server': 'actionlib_msgs/GoalID',
                 'type': GoalID
             },
-
-            'current_node': { 
+#            'ui/speaker': { # commenting out as this doesn't exist in ROS2 hunter
+#                'source':'server',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'std_msgs/String',
+#                'type_server': 'std_msgs/String',
+#                'type': String
+#            },
+            'current_node': { # commented out for testing
                 'source':'robot',
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
@@ -119,7 +132,7 @@ class MqttPseudoBridge(Node):
                 'type_server': 'std_msgs/String',
                 'type': std_msgs.msg.String
             },
-            'closest_node': { 
+            'closest_node': { #commented out for testing
                 'source':'robot',
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
@@ -128,7 +141,70 @@ class MqttPseudoBridge(Node):
                 'type_server': 'std_msgs/String',
                 'type': std_msgs.msg.String
             },
-
+#            'topological_navigation/execute_policy_mode/feedback': {
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionFeedback',
+#                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionFeedback',
+#                'type': ExecutePolicyModeActionFeedback
+#            },
+#            'topological_navigation/execute_policy_mode/result': {
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionResult',
+#                'type_server': 'strands_navigation_msgs/ExecutePolicyModeActionResult',
+#                'type': ExecutePolicyModeActionResult
+#            },
+#            'topological_navigation/execute_policy_mode/status': {
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'actionlib_msgs/GoalStatusArray',
+#                'type_server': 'actionlib_msgs/GoalStatusArray',
+#                'type': GoalStatusArray
+#            },
+#            'topological_navigation/feedback': {
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/GotoNodeActionFeedback',
+#                'type_server': 'strands_navigation_msgs/GotoNodeActionFeedback',
+#                'type': GotoNodeActionFeedback
+#            },
+#            'topological_navigation/result': {
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'topological_navigation_msgs/GotoNodeActionResult',
+#                'type_server': 'strands_navigation_msgs/GotoNodeActionResult',
+#                'type': GotoNodeActionResult
+#            },
+#            'topological_navigation/status': {
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'actionlib_msgs/GoalStatusArray',
+#                'type_server': 'actionlib_msgs/GoalStatusArray',
+#                'type': GoalStatusArray
+#            },
+#            'han/balance_data': { # commented out as this doesn't exist in ROS2 hunter..
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'std_msgs/Float32',
+#                'type_server': 'std_msgs/Float32',
+#                'type': Float32
+#            },
+#            'robot_pose': {
             'odometry/global': {
                 'source':'robot',
                 'namespace_robot': '/',
@@ -138,9 +214,19 @@ class MqttPseudoBridge(Node):
                 'type_server': 'geometry_msgs/Pose',
                 'type': Odometry
             },
+#            'tf': { #not needed, just for testing
+#                'source':'robot',
+#                'namespace_robot': '/',
+#                'namespace_mqtt': self.robot_name+'<<rn>>/',
+#                'namespace_server': '/'+self.robot_name+'<<rn>>/',
+#                'type_robot': 'tf',
+#                'type_server': 'tf',
+#                'type': TFMessage
+#            },
         }
-       
-        #self.load_topics()
+
+        print("topics are:", self.topics)
+
         self.mqtt_topics = dict()
         self.ros_topics = dict()
         self.agents = []
@@ -148,13 +234,6 @@ class MqttPseudoBridge(Node):
         # Initiate connections to ROS and MQTT
         self.connect_to_mqtt()
         self.connect_to_ros()
-
-
-    def load_topics(self):
-      filename = os.path.dirname(os.path.realpath(__file__)) + "/../config/bridged_topics.yaml"
-      topics = open(filename).read().replace("${ROBOT_NAME}", self.robot_name)
-      self.topics = yaml.safe_load(topics)
-      print("topics are:", self.topics)
 
 
     def connect_to_mqtt(self):
@@ -304,9 +383,9 @@ class MqttPseudoBridge(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    mqtt_pseudo_bridge = MqttPseudoBridge()
-    rclpy.spin(mqtt_pseudo_bridge)
-    mqtt_pseudo_bridge.destroy_node()
+    mqtt_psuedo_bridge = MqttPsuedoBridge()
+    rclpy.spin(mqtt_psuedo_bridge)
+    mqtt_psuedo_bridge.destroy_node()
     rclpy.shutdown()
 
 
