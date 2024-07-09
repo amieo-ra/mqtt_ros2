@@ -23,7 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'mqtt_pseudo_bridge.py = mqtt_ros2.mqtt_pseudo_bridge:main',
-            'send_details_to_coordinator.py = mqtt_ros2.send_details_to_coordinator:main'
+            'send_details_to_coordinator.py = mqtt_ros2.send_details_to_coordinator:main',
+            'middle_node.py = mqtt_ros2.middle_node:main'
         ],
     },
 
