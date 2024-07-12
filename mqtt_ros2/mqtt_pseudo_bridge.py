@@ -190,8 +190,8 @@ class MqttPseudoBridge(Node):
 
     def on_message(self, client, userdata, msg):
         # Identify topic
-        print('\n\n')
-        print(" MQTT        | Message received ["+msg.topic+"]")
+        # print('\n\n')
+        # print(" MQTT        | Message received ["+msg.topic+"]")
 
         def remove_suffix(text, suffix):
             if text.endswith(suffix):
@@ -216,7 +216,7 @@ class MqttPseudoBridge(Node):
 
         #if msg.topic != 'topological_map_2':
         if topic != 'topological_map_2':
-            print(" MQTT -> ROS |     payload: "+str(msg))
+            # print(" MQTT -> ROS |     payload: "+str(msg))
             #rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
             rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
             #print(rosmsg_data)
@@ -263,7 +263,7 @@ class MqttPseudoBridge(Node):
 
     # Our subscribers to get data from the local ROS and into the MQTT broker
     def ros_cb(self, msg, callback_args):
-        print(" MQTT        | publishing on "+callback_args)
+        # print(" MQTT        | publishing on "+callback_args)
         #self.get_logger().info('I heard: "%s"' & msg.pose)
         data = bytearray(self.dumps(message_converter.convert_ros_message_to_dictionary(msg)))    #TODO: ONLY use bytearray is msgpack is being used....
         self.mqtt_client.publish(callback_args, data)
@@ -281,7 +281,7 @@ class MqttPseudoBridge(Node):
         # On the robot, if the source is the server, we sub to MQTT and pub through to ROS
         # On the server, if the source is the robot, we sub to MQTT and pub through to ROS
         if topic_details['source'] != self.source:
-            print(" MQTT -> ROS | publishing from " + mqtt_topic + " to " + ros_topic)
+            # print(" MQTT -> ROS | publishing from " + mqtt_topic + " to " + ros_topic)
             #self.ros_topics[ros_topic] = rospy.Publisher(ros_topic, topic_details['type'], queue_size=10)
             self.ros_topics[ros_topic] = self.create_publisher( topic_details['type'], ros_topic, self.qos) ####
             if sub_to_mqtt:
@@ -297,8 +297,8 @@ class MqttPseudoBridge(Node):
                 reliability=ReliabilityPolicy.BEST_EFFORT,
                 history=HistoryPolicy.KEEP_LAST,
                 durability=DurabilityPolicy.VOLATILE)
-            print(" ROS -> MQTT | publishing from " + ros_topic + " to " + mqtt_topic)
-            print("topic info:", topic_details['type'], ros_topic)
+            # print(" ROS -> MQTT | publishing from " + ros_topic + " to " + mqtt_topic)
+            # print("topic info:", topic_details['type'], ros_topic)
             self.callback_args = mqtt_topic
             self.ros_topics[ros_topic] = self.create_subscription(topic_details['type'], ros_topic, lambda msg:self.ros_cb(msg, callback_args=mqtt_topic), qos)#, self.ros_cb(callback_args=mqtt_topic), 10) # qos)#, callback_args=mqtt_topic)#, qos)
 

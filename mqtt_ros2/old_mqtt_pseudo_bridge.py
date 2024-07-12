@@ -269,8 +269,8 @@ class MqttPsuedoBridge(Node):
 
     def on_message(self, client, userdata, msg):
         # Identify topic
-        print('\n\n')
-        print(" MQTT        | Message received ["+msg.topic+"]")
+        # print('\n\n')
+        # print(" MQTT        | Message received ["+msg.topic+"]")
 
         def remove_suffix(text, suffix):
             if text.endswith(suffix):
@@ -342,7 +342,7 @@ class MqttPsuedoBridge(Node):
 
     # Our subscribers to get data from the local ROS and into the MQTT broker
     def ros_cb(self, msg, callback_args):
-        print(" MQTT        | publishing on "+callback_args)
+        # print(" MQTT        | publishing on "+callback_args)
         #self.get_logger().info('I heard: "%s"' & msg.pose)
         data = bytearray(self.dumps(message_converter.convert_ros_message_to_dictionary(msg)))    #TODO: ONLY use bytearray is msgpack is being used....
         self.mqtt_client.publish(callback_args, data)

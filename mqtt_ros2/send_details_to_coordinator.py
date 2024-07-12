@@ -33,17 +33,17 @@ class addagent(Node):
 
         # Collect details
         agent_id = os.getenv('ROBOT_NAME', 'gofar_001')
-        #setupfile = '/home/developer/aoc_strawberry_scenario_ws/src/mqtt_ros2/short.yaml'
+        # setupfile = '/home/developer/aoc_strawberry_scenario_ws/src/mqtt_ros2/short.yaml'
        
         setup = os.getenv('AGENT_SETUP_CONFIG', self.setupfile)
 
-        print("AddAgent Node launched")
-        print("Loading configurations:")
-        print("    - agent_file: %s"%agent_id)
-        print("    - setup_file: %s"%setup)
+        # print("AddAgent Node launched")
+        # print("Loading configurations:")
+        # print("    - agent_file: %s"%agent_id)
+        # print("    - setup_file: %s"%setup)
 
         agent = self.load_agent_obj(agent_id, setup)
-        print("Details of Agent being launched:\n%s\n\n"%agent)
+        # print("Details of Agent being launched:\n%s\n\n"%agent)
 
         self.publisher.publish(agent)
 
@@ -58,13 +58,13 @@ class addagent(Node):
 
         # Load file contents, (fallback on empty file if agent_file not found)
         agent_data = {'agent_id': agent_id.split("/")[-1].split(".")[0]}
-        print("Launching with agent_data: %s" % (agent_data))
+        # print("Launching with agent_data: %s" % (agent_data))
 
         # Build msg
         with open(setup_file) as f:
             setup_data = yaml.safe_load(f)
-        pprint(setup_data)
-        print("\n")
+        # pprint(setup_data)
+        # print("\n")
 
         # Construct object
         agent = NewAgentConfigGoF()
@@ -83,19 +83,14 @@ class addagent(Node):
                         for d in m['details']]) 
                         for m in setup_data['modules']]
         
-        print("\n\n")
+        # print("\n\n")
         
         return agent
     
 def main(args=None):
-    rclpy.init(args=args)
+    rclpy.init()
     AddAgent = addagent()
     rclpy.spin(AddAgent)
-
-    AddAgent.destroy_node()
-    rclpy.shutdown()
-    
-
 
 if __name__ == '__main__':
     main()
