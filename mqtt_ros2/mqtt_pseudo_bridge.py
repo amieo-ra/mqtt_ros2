@@ -215,10 +215,18 @@ class MqttPseudoBridge(Node):
 
         rosmsg = topic_info['type_'+self.source]
 
-        for key, val in msg.items():
-            if key == 'header':
-                print("HEADER IS:", key, val)
-                del msg[key]
+        try:
+            del msg['header']
+            del msg['goal_id']
+            del msg['id']
+
+            msg = msg['goal']
+            msg_1 = msg['goal']
+            print("msg here is:", msg)
+            print("msg1 is:", msg_1)
+        except:
+            exit
+
                 
         for key, val in msg.items():
             try:
@@ -241,13 +249,20 @@ class MqttPseudoBridge(Node):
             
         print("DATA ON MESSAGE IS:", msg)
 
+        try:
+            msg_conv = msg['goal']
+        except:
+            msg_conv = msg
+
+        print("converted msg is:", msg_conv)
+
         #if msg.topic != 'topological_map_2':
         if topic != 'topological_map_2':
             # print(" MQTT -> ROS |     payload: "+str(msg))
             #rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
             print (r">>>",rosmsg)
-            print(msg)
-            rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg) #, strict_mode=False) # added strict_mode=False
+            print(msg_conv)
+            rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg_conv) #, strict_mode=False) # added strict_mode=False
             print("after conversion", rosmsg_data)
         else:
             rosmsg_data = String()
