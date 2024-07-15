@@ -86,8 +86,8 @@ class MqttPseudoBridge(Node):
                 'namespace_robot': '/',
                 'namespace_mqtt': self.robot_name+'<<rn>>/',
                 'namespace_server': '/'+self.robot_name+'<<rn>>/',
-                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeActionGoal',
-                'type_server': 'topological_navigation_msgs/ExecutePolicyModeActionGoal', #previously strands_navigation_msgs/ExecutePolicyModeActionGoal
+                'type_robot': 'topological_navigation_msgs/ExecutePolicyModeGoal', #was ExecutePolicyModeActionGoal
+                'type_server': 'topological_navigation_msgs/ExecutePolicyModeGoal', #previously strands_navigation_msgs/ExecutePolicyModeActionGoal
                 'type': ExecutePolicyModeGoal
             },
             'topological_navigation/execute_policy_mode/cancel': {
@@ -210,25 +210,56 @@ class MqttPseudoBridge(Node):
 
         #Convert bytearray to msg
         msg = self.loads(msg.payload)
+        #msg['time'] = 'builtin_interfaces/Time' # AO ADDED
+        #print("msg['time'] is:", msg['time'])
 
         rosmsg = topic_info['type_'+self.source]
 
+        for key, val in msg.items():
+            if key == 'header':
+                print("HEADER IS:", key, val)
+                del msg[key]
+                
+        for key, val in msg.items():
+            try:
+                for key1, val1 in val.items():
+                    if key1 == 'secs':
+                        val['sec'] = val.pop('secs')
+                    elif key1 == 'nsecs':
+                        val['nanosec'] = val.pop('nsecs')
+                    try:
+                        for key2, val2 in val1.items():
+                            if key2 == 'secs':
+                                val1['sec'] = val1.pop('secs')
+                            elif key2 == 'nsecs':
+                                val1['nanosec'] = val1.pop('nsecs')
+                            print("key2 now is:", key2)
+                    except:
+                        continue
+            except:
+                continue         
+            
+        print("DATA ON MESSAGE IS:", msg)
 
         #if msg.topic != 'topological_map_2':
         if topic != 'topological_map_2':
             # print(" MQTT -> ROS |     payload: "+str(msg))
             #rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
-            rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg)
-            #print(rosmsg_data)
+            print (r">>>",rosmsg)
+            print(msg)
+            rosmsg_data = message_converter.convert_dictionary_to_ros_message(rosmsg, msg) #, strict_mode=False) # added strict_mode=False
+            print("after conversion", rosmsg_data)
         else:
             rosmsg_data = String()
             rosmsg_data.data = str(msg)
 
         # Publish msg to relevant ROS topic
         #print(self.ros_topics)
-        rostopic =  topic_info['namespace_server'].replace('<<rn>>', sender) + topic
+        #rostopic =  topic_info['namespace_server'].replace('<<rn>>', sender) + topic # AO 15TH JULY
+        rostopic = "/" + topic
         #print(rostopic)
         self.ros_topics[rostopic].publish(rosmsg_data)
+        print("got past publish stage..!")
 
 
     def connect_to_ros(self):
@@ -248,6 +279,7 @@ class MqttPseudoBridge(Node):
 
     def agent_cb(self, msg):
         # Skip if agent exists
+        print("DATA AGENTCB IS:", msg)
         if msg.agent_id in self.agents: return
         self.agents += [msg.agent_id]
         print('       AGENT | New agent detected: ' + msg.agent_id)
