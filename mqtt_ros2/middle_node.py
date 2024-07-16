@@ -94,13 +94,12 @@ class ActionMiddleman(Node):
                     status = self.goal_get_result_future.result().status
                     self.action_status = status
                     self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
+                    self.current_goal.add_done_callback(self.goal_response_callback) # CHECK THIS...
                     return True
             except Exception as e:
                 self.get_logger().error("Error while executing go to node policy {} ".format(e))
                 return False  
  
- 
-        self.current_goal.add_done_callback(self.goal_response_callback)
  
     def cancel_callback(self, msg):
         self.get_logger().info('Received cancel request')
@@ -127,7 +126,7 @@ class ActionMiddleman(Node):
     def feedback_callback(self, feedback_msg):
         self.nav_client_feedback = feedback_msg.feedback
         self.get_logger().info("feedback: {} ".format(self.nav_client_feedback))
-        # feedback_array = ExecutePolicyModeFeedback()
+        feedback_array = ExecutePolicyModeFeedback()
         # feedback_array.data = feedback_msg.feedback.partial_sequence
         # self.feedback_publisher.publish(feedback_array)
  
