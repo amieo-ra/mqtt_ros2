@@ -8,20 +8,29 @@ from topological_navigation_msgs.msg import ExecutePolicyModeGoal
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from std_msgs.msg import String  # Adjust according to the data types you expect
 from actionlib_msgs.msg import GoalID, GoalStatusArray
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, HistoryPolicy
  
  
  
 class ActionMiddleman(Node):
     def __init__(self):
         super().__init__('action_middleman')
+        print("running actionmiddleman")
         # Initialize the action client
  
         self.action_server_name = '/topological_navigation'        
         self.client = ActionClient(self, GotoNode, self.action_server_name)
+
+        self.qos = QoSProfile(depth=1, 
+        #reliability=ReliabilityPolicy.RELIABLE,
+        reliability=ReliabilityPolicy.RELIABLE,
+        history=HistoryPolicy.KEEP_LAST,
+        durability=DurabilityPolicy.TRANSIENT_LOCAL)
+
  
         # Subscribe to the custom topics
-        self.goal_subscriber = self.create_subscription(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/goal', self.goal_callback, 10)
-        self.cancel_subscriber = self.create_subscription(GoalID, 'topological_navigation/execute_policy_mode/cancel', self.cancel_callback, 10)
+        self.goal_subscriber = self.create_subscription(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/goal', self.goal_callback, qos_profile=self.qos)
+        self.cancel_subscriber = self.create_subscription(GoalID, 'topological_navigation/execute_policy_mode/cancel', self.cancel_callback, qos_profile=self.qos)
         # Publishers for feedback and result
         # self.feedback_publisher = self.create_publisher(ExecutePolicyModeFeedback, 'topological_navigation/execute_policy_mode/feedback', 10)
         # self.result_publisher = self.create_publisher(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/result', 10) #(ExecutePolicyModeResult, 'topological_navigation/execute_policy_mode/result', 10)
@@ -34,6 +43,9 @@ class ActionMiddleman(Node):
         print("waiting for topics")
  
     def goal_callback(self, msg):
+
+        print("got to callback for goal")
+        print("the goal message is:", msg)
  
         if not self.client.server_is_ready():
             self.get_logger().info("Waiting for the action server  {}...".format(self.action_server_name))
@@ -48,12 +60,11 @@ class ActionMiddleman(Node):
         # self.get_logger().info(f'Received new goal: {msg.data}')
  
         goal = msg.route.edge_id[-1].split('_')[-1]
+        print("<<<<goal is>>>>:", goal)
         # Parse the message according to your actual message structure
         goal_msg = GotoNode.Goal()
         goal_msg.target = goal
-        #goal_msg = goal
-        #goal_msg.order = int(msg.data)  # Assuming the message is just an integer order
-        self.send_current_goal = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+        self.send_current_goal = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback) #COMMENTED OUT FOR TESTING
  
         while rclpy.ok():
             try:
@@ -86,7 +97,6 @@ class ActionMiddleman(Node):
                     return True
             except Exception as e:
                 self.get_logger().error("Error while executing go to node policy {} ".format(e))
-                # self.goal_get_result_future = None
                 return False  
  
  
