@@ -4,7 +4,7 @@ from rclpy.action import ActionClient
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 #from topological_navigation_msgs.msg import ExecutePolicyModeFeedback, ExecutePolicyModeResult
 # from topological_navigation_msgs.msg import ExecutePolicyModeFeedback
-from topological_navigation_msgs.msg import ExecutePolicyModeGoal
+from topological_navigation_msgs.msg import ExecutePolicyModeGoal, ExecutePolicyModeFeedback
 from topological_navigation_msgs.action import GotoNode, ExecutePolicyMode
 from std_msgs.msg import String  # Adjust according to the data types you expect
 from actionlib_msgs.msg import GoalID, GoalStatusArray
@@ -41,6 +41,12 @@ class ActionMiddleman(Node):
         self.current_goal = None
         self.goal_handle = None
         print("waiting for topics")
+
+        self.goal_cancel_error_codes = {} 
+        self.goal_cancel_error_codes[0] = "ERROR_NONE"
+        self.goal_cancel_error_codes[1] = "ERROR_REJECTED"
+        self.goal_cancel_error_codes[2] = "ERROR_UNKNOWN_GOAL_ID"
+        self.goal_cancel_error_codes[3] = "ERROR_GOAL_TERMINATED"
  
     def goal_callback(self, msg):
 
@@ -94,12 +100,14 @@ class ActionMiddleman(Node):
                     status = self.goal_get_result_future.result().status
                     self.action_status = status
                     self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
-                    self.current_goal.add_done_callback(self.goal_response_callback) # CHECK THIS...
                     return True
             except Exception as e:
                 self.get_logger().error("Error while executing go to node policy {} ".format(e))
                 return False  
  
+ 
+        #self.current_goal.add_done_callback(self.goal_response_callback)
+        
  
     def cancel_callback(self, msg):
         self.get_logger().info('Received cancel request')
@@ -115,12 +123,19 @@ class ActionMiddleman(Node):
                 # rclpy.spin_until_future_complete(self, cancel_future, executor=self.executor_goto_client, timeout_sec=2.0)
                 if cancel_future.done() and self.goal_get_result_future.done():
                     self.action_status = self.goal_get_result_future.result().status
-                    self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancle_error_msg(cancel_future.result().return_code)))
+                    self.get_logger().info("The goal cancel error code {} ".format(self.get_goal_cancel_error_msg(cancel_future.result().return_code)))
                     return True
             except Exception as e:
                 # self.goal_handle = None
                 self.get_logger().error("Edge Action Manager: error while canceling the previous action")
                 return False
+            
+    def get_goal_cancel_error_msg(self, status_code):
+        try:
+            return self.goal_cancel_error_codes[status_code]
+        except Exception as e:
+            self.get_logger().error("Goal cancel code {}".format(status_code))
+            return self.goal_cancel_error_codes[0]
             
  
     def feedback_callback(self, feedback_msg):
@@ -129,6 +144,7 @@ class ActionMiddleman(Node):
         feedback_array = ExecutePolicyModeFeedback()
         # feedback_array.data = feedback_msg.feedback.partial_sequence
         # self.feedback_publisher.publish(feedback_array)
+        return
  
     def goal_response_callback(self, future):
         result = future.result().result
