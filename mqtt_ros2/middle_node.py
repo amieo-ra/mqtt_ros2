@@ -30,16 +30,19 @@ class ActionMiddleman(Node):
  
         # Subscribe to the custom topics
         self.goal_subscriber = self.create_subscription(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/goal', self.goal_callback, qos_profile=self.qos)
-        self.cancel_subscriber = self.create_subscription(GoalID, 'topological_navigation/execute_policy_mode/cancel', self.cancel_callback, qos_profile=self.qos)
+        #self.cancel_subscriber = self.create_subscription(GoalID, 'topological_navigation/execute_policy_mode/cancel', self.cancel_callback, qos_profile=self.qos)
         # Publishers for feedback and result
         # self.feedback_publisher = self.create_publisher(ExecutePolicyModeFeedback, 'topological_navigation/execute_policy_mode/feedback', 10)
         # self.result_publisher = self.create_publisher(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/result', 10) #(ExecutePolicyModeResult, 'topological_navigation/execute_policy_mode/result', 10)
-        # self.status_publisher = self.create_publisher(GoalStatusArray, 'topological_navigation/execute_policy_mode/status', 10)
+        self.status_publisher = self.create_publisher(GoalStatusArray, 'topological_navigation/execute_policy_mode/status', 10)
         
         self.executor_goto_client = SingleThreadedExecutor()
         
-        self.current_goal = None
+        self.target_goal = None
         self.goal_handle = None
+        navgoal = GotoNode.Goal()
+        self.goal = navgoal
+        #navgoal.target = feedback.marker_name
         print("waiting for topics")
 
         self.goal_cancel_error_codes = {} 
@@ -47,6 +50,12 @@ class ActionMiddleman(Node):
         self.goal_cancel_error_codes[1] = "ERROR_REJECTED"
         self.goal_cancel_error_codes[2] = "ERROR_UNKNOWN_GOAL_ID"
         self.goal_cancel_error_codes[3] = "ERROR_GOAL_TERMINATED"
+
+    def feedback_callback(self, feedback_msg):
+        print("got to feedback")
+        self.nav_client_feedback = feedback_msg.feedback
+        self.get_logger().info("feedback: {} ".format(self.nav_client_feedback))
+        return 
  
     def goal_callback(self, msg):
 
@@ -65,53 +74,91 @@ class ActionMiddleman(Node):
  
         # self.get_logger().info(f'Received new goal: {msg.data}')
  
-        goal = msg.route.edge_id[-1].split('_')[-1]
-        print("<<<<goal is>>>>:", goal)
+        self.future_goal = msg.route.edge_id[-1].split('_')[-1]
+        print("<<<<goal is>>>>:", self.future_goal)
         # Parse the message according to your actual message structure
-        goal_msg = GotoNode.Goal()
-        goal_msg.target = goal
-        self.send_current_goal = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback) #COMMENTED OUT FOR TESTING
- 
+        #self.target_goal = GotoNode.Goal()
+        #self.target_goal.target = goal
+
+        self.execute_go_to_goal()
+    
+
+    def send_goal_request(self, send_goal_future, msg):
+
         while rclpy.ok():
+            print("4444")
             try:
-                rclpy.spin_once(self, executor=self.executor_goto_client)
-                if self.send_current_goal.done():
-                    self.goal_handle = self.send_current_goal.result()
+                print("5555")
+                # rclpy.spin_once(self)
+                # print("send_goal_future ", send_goal_future)
+                rclpy.spin_once(self, executor=self.executor_goto_client, timeout_sec=0.5)
+                print("6666")
+                print("callback is:", send_goal_future.result())
+                # rclpy.spin_until_future_complete(self, send_goal_future, executor=self.executor_nav_client, timeout_sec=2.0)
+                if send_goal_future.done():
+                    print("7777")
+                    self.goal_handle = send_goal_future.result()
+                    print("8888")
                     break
- 
+                else:
+                    print("9999")
+                    break
             except Exception as e:
-                self.get_logger().error("Error while sending the goal to GOTO node{} ".format(e))
- 
+                self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors : {} while executing  send_goal_request {}".format(e, msg))
+                return False 
+                  
         if not self.goal_handle.accepted:
-            self.get_logger.error('GOTO action is rejected')
+            self.get_logger().error('Edge Action Manager: The goal rejected: {}'.format(msg))
             return False
-        
-        self.get_logger().info('The goal is accepted')
+        self.get_logger().info('Edge Action Manager: The goal accepted for {}'.format(msg))
+        return True 
+     
+    
+    def processing_goal_request(self, target_action):
+        if self.goal_handle is None:
+            self.get_logger().error("Edge Action Manager: Something wrong with the goal request, there is no goal to process {}".format(self.action_status))
+            return True
         self.goal_get_result_future = self.goal_handle.get_result_async()
-        self.get_logger().info("Waiting for {} action to complete".format(self.action_server_name))
-        
+        self.get_logger().info("Edge Action Manager: Waiting for {} action to complete".format(self.action_server_name))
         while rclpy.ok():
             try:
-                rclpy.spin_once(self, timeout_sec=0.2)
-                if(self.early_terminate_is_required):
-                   self.get_logger().warning("Not going to wait till finishing ongoing task, early termination is required ")
-                   return False
+                # rclpy.spin_once(self)
+                # print("goal_get_result_future ", self.goal_get_result_future)
+                rclpy.spin_once(self, executor=self.executor_goto_client, timeout_sec=1.5)
+                # rclpy.spin_until_future_complete(self, self.goal_get_result_future, executor=self.executor_nav_client, timeout_sec=2.0)
                 if self.goal_get_result_future.done():
                     status = self.goal_get_result_future.result().status
                     self.action_status = status
-                    self.get_logger().info("Executing the action response with status {}".format(self.get_status_msg(self.action_status)))
-                    return True
+                    self.get_logger().info("Go to node: Executing the action response with status")
+                    #self.current_action = self.action_name
+                    self.goal_resposne = self.goal_get_result_future.result()
             except Exception as e:
-                self.get_logger().error("Error while executing go to node policy {} ".format(e))
-                return False  
- 
- 
-        #self.current_goal.add_done_callback(self.goal_response_callback)
-        
+                # self.goal_handle = Nosne 
+                self.get_logger().error("Edge Action Manager: Nav2 server got some unexpected errors: {} while executing processing_goal_request {}".format(e, target_action))
+                return False
+        return True 
+    
+
+    def execute_go_to_goal(self,):
+        print("in executing function")
+        #target_goal = GotoNode.Goal()
+        #target_goal.target = self.goal ####got up to here
+        self.goal.target = self.future_goal
+        print("1111")
+        send_goal_future = self.client.send_goal_async(self.goal, feedback_callback=self.feedback_callback)
+        print("2222")
+        print("result is:", send_goal_future.result())
+        #goal_accepted = self.send_goal_request(send_goal_future, "requesting go to goal")
+        #print("3333")
+        #if(goal_accepted == False):
+        #    return False 
+        #processed_goal = self.processing_goal_request("actioning go to goal")
+        #return processed_goal
+      
  
     def cancel_callback(self, msg):
         self.get_logger().info('Received cancel request')
-        if self.current_goal:
+        if self.target_goal:
             cancel_future = self.current_goal.cancel_goal_async()
             # self.current_goal.cancel_goal_async()
  
