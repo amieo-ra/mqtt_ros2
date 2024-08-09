@@ -42,6 +42,8 @@ class MqttPseudoBridge(Node):
         self.mqtt_encoding = os.getenv('MQTT_ENCODING', 'msgpack')
         mqtt_client = None
 
+        print("init MQTT")
+
         # Specify the loading and dumping functions
         self.dumps = msgpack.dumps if self.mqtt_encoding == 'msgpack' else json.dumps
         self.loads = msgpack.loads if self.mqtt_encoding == 'msgpack' else json.loads
@@ -252,9 +254,11 @@ class MqttPseudoBridge(Node):
         try:
             msg_conv = msg['goal']
         except:
+            print("went to except")
             msg_conv = msg
 
         print("converted msg is:", msg_conv)
+        print("topic is:", topic)
 
         #if msg.topic != 'topological_map_2':
         if topic != 'topological_map_2':
@@ -272,7 +276,7 @@ class MqttPseudoBridge(Node):
         #print(self.ros_topics)
         #rostopic =  topic_info['namespace_server'].replace('<<rn>>', sender) + topic # AO 15TH JULY
         rostopic = "/" + topic
-        #print(rostopic)
+        print("ROSTOPIC IS:", rostopic)
         self.ros_topics[rostopic].publish(rosmsg_data)
         print("got past publish stage..!")
 
