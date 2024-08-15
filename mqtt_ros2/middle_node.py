@@ -30,7 +30,7 @@ class ActionMiddleman(Node):
  
         # Subscribe to the custom topics
         self.goal_subscriber = self.create_subscription(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/goal', self.goal_callback, qos_profile=self.qos)
-        #self.cancel_subscriber = self.create_subscription(GoalID, 'topological_navigation/execute_policy_mode/cancel', self.cancel_callback, qos_profile=self.qos)
+        #self.cancel_subscriber = self.create_subscription(GoalID, 'topological_navigation/execute_policy_mode/cancel', self.cancel_callback, qos_profile=self.qos) NEED TO REACTIVATE THIS..
         # Publishers for feedback and result
         # self.feedback_publisher = self.create_publisher(ExecutePolicyModeFeedback, 'topological_navigation/execute_policy_mode/feedback', 10)
         # self.result_publisher = self.create_publisher(ExecutePolicyModeGoal, 'topological_navigation/execute_policy_mode/result', 10) #(ExecutePolicyModeResult, 'topological_navigation/execute_policy_mode/result', 10)
