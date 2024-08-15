@@ -212,8 +212,6 @@ class MqttPseudoBridge(Node):
 
         #Convert bytearray to msg
         msg = self.loads(msg.payload)
-        #msg['time'] = 'builtin_interfaces/Time' # AO ADDED
-        #print("msg['time'] is:", msg['time'])
 
         rosmsg = topic_info['type_'+self.source]
 
@@ -223,9 +221,7 @@ class MqttPseudoBridge(Node):
             del msg['id']
 
             msg = msg['goal']
-            msg_1 = msg['goal']
             print("msg here is:", msg)
-            print("msg1 is:", msg_1)
         except:
             exit
 
