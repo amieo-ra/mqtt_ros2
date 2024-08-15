@@ -144,12 +144,12 @@ class ActionMiddleman(Node):
         #target_goal = GotoNode.Goal()
         #target_goal.target = self.goal ####got up to here
         self.goal.target = self.future_goal
-        print("1111")
+        print("goal set")
         send_goal_future = self.client.send_goal_async(self.goal, feedback_callback=self.feedback_callback)
-        print("2222")
+        print("goal sent")
         print("result is:", send_goal_future.result())
         #goal_accepted = self.send_goal_request(send_goal_future, "requesting go to goal")
-        #print("3333")
+        #print("goal accepted")
         #if(goal_accepted == False):
         #    return False 
         #processed_goal = self.processing_goal_request("actioning go to goal")
