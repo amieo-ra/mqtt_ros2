@@ -13,7 +13,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*')))
     ],
-    install_requires=['sympy>=1.5.1'],
+    install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Amie Owen',
     maintainer_email='amieo@live.co.uk',
